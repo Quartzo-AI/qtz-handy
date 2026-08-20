@@ -59,8 +59,13 @@ ORT_LIB_LOCATION=$(brew --prefix onnxruntime)/lib ORT_PREFER_DYNAMIC_LINK=1 bun 
   # Arch Linux
   sudo pacman -S base-devel alsa-lib pkgconf openssl vulkan-devel \
     gtk3 webkit2gtk-4.1 libappindicator-gtk3 librsvg gtk-layer-shell \
-    cmake clang xdotool bun
+    cmake clang xdotool bun pipewire-pulse pipewire-alsa pipewire-audio wireplumber
   ```
+
+> **Note on Audio Subsystem (PipeWire):** Ensure the user audio session services are enabled:
+> ```bash
+> systemctl --user enable --now pipewire pipewire-pulse wireplumber
+> ```
 
 > **Note for bindgen / Whisper build:** Make sure `libclang.so` is discoverable during compilation. On Linux/Arch:
 > ```bash
@@ -90,12 +95,19 @@ bun tauri dev
 
 ### 4. Build for Production
 
+> ⚠️ **Important:** Do NOT use raw `cargo build --release` directly. Raw cargo compiles with `devUrl: "http://localhost:1420"`, causing `Could not connect to localhost: Connection refused` in production. Always build using the Tauri CLI so frontend assets in `dist/` are embedded into the binary:
+
 ```bash
 export LIBCLANG_PATH=/usr/lib
-bun run tauri build -- --bundles deb
+
+# Option 1: Generate deb bundle + release binary
+./node_modules/.bin/tauri build -b deb --ci
+
+# Option 2: Generate standalone release binary without package bundle
+./node_modules/.bin/tauri build --no-bundle --ci
 ```
 
-This compiles a release binary and generates platform-specific bundles (`deb` bundle is recommended on Arch Linux to bypass `linuxdeploy` AppImage limitations).
+The compiled binary will be at `src-tauri/target/release/handy`.
 
 ## Linux Install (from source)
 
