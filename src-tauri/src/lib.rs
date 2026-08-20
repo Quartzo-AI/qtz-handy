@@ -194,9 +194,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let tray = TrayIconBuilder::new()
         .icon(
             Image::from_path(
-                app_handle
-                    .path()
-                    .resolve(initial_icon_path, tauri::path::BaseDirectory::Resource)
+                crate::portable::resolve_resource(app_handle, initial_icon_path)
                     .unwrap(),
             )
             .unwrap(),

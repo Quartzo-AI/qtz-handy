@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::thread;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 pub enum SoundType {
     Start,
@@ -25,7 +25,7 @@ fn resolve_sound_path(
         tauri::path::BaseDirectory::AppData => {
             crate::portable::resolve_app_data(app, &sound_file).ok()
         }
-        _ => app.path().resolve(&sound_file, base_dir).ok(),
+        _ => crate::portable::resolve_resource(app, &sound_file).ok(),
     }
 }
 

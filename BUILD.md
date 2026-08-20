@@ -59,16 +59,21 @@ ORT_LIB_LOCATION=$(brew --prefix onnxruntime)/lib ORT_PREFER_DYNAMIC_LINK=1 bun 
   # Arch Linux
   sudo pacman -S base-devel alsa-lib pkgconf openssl vulkan-devel \
     gtk3 webkit2gtk-4.1 libappindicator-gtk3 librsvg gtk-layer-shell \
-    cmake
+    cmake clang xdotool bun
   ```
+
+> **Note for bindgen / Whisper build:** Make sure `libclang.so` is discoverable during compilation. On Linux/Arch:
+> ```bash
+> export LIBCLANG_PATH=/usr/lib
+> ```
 
 ## Setup Instructions
 
 ### 1. Clone the Repository
 
 ```bash
-git clone git@github.com:cjpais/Handy.git
-cd Handy
+git clone git@github.com:gabrieldasf/qtz-handy.git
+cd qtz-handy
 ```
 
 ### 2. Install Dependencies
@@ -86,32 +91,68 @@ bun tauri dev
 ### 4. Build for Production
 
 ```bash
-bun run tauri build
+export LIBCLANG_PATH=/usr/lib
+bun run tauri build -- --bundles deb
 ```
 
-This compiles a release binary and generates platform-specific bundles (deb, rpm, AppImage on Linux; dmg on macOS; msi on Windows).
+This compiles a release binary and generates platform-specific bundles (`deb` bundle is recommended on Arch Linux to bypass `linuxdeploy` AppImage limitations).
 
 ## Linux Install (from source)
 
-The raw binary (`src-tauri/target/release/handy`) cannot run standalone — it needs Tauri resource files (tray icons, sounds, VAD model) to be co-located at the expected path.
+Handy supports both user-local installation (no root/sudo required) and system-wide installation:
 
-**Install from the deb bundle** (works on any Linux distro):
+### Option A: User-Local Install (Recommended / No Sudo)
+
+Install directly to `~/Applications/Handy` and link into `~/.local/bin`:
+
+```bash
+# 1. Create target directories
+mkdir -p ~/Applications/Handy ~/.local/bin ~/.local/share/applications ~/.local/share/icons/hicolor
+
+# 2. Extract files from the deb bundle
+cd /tmp
+ar x /path/to/qtz-handy/src-tauri/target/release/bundle/deb/Handy_*_amd64.deb data.tar.gz
+tar xzf data.tar.gz
+
+# 3. Copy binary and bundled resources alongside executable
+cp usr/bin/handy ~/Applications/Handy/
+cp -r usr/lib/Handy/resources ~/Applications/Handy/
+cp -r usr/share/icons/hicolor/* ~/.local/share/icons/hicolor/
+
+# 4. Create PATH symlink
+ln -sf ~/Applications/Handy/handy ~/.local/bin/handy
+
+# 5. Create desktop menu entry
+cat << 'EOF' > ~/.local/share/applications/Handy.desktop
+[Desktop Entry]
+Categories=Utility;AudioVideo;
+Comment=Speech-to-text desktop utility
+Exec=/home/$USER/Applications/Handy/handy
+StartupWMClass=handy
+Icon=handy
+Name=Handy
+Terminal=false
+Type=Application
+EOF
+
+update-desktop-database ~/.local/share/applications 2>/dev/null || true
+gtk-update-icon-cache -f -t ~/.local/share/icons/hicolor 2>/dev/null || true
+```
+
+### Option B: System-Wide Install (Requires Sudo)
 
 ```bash
 cd /tmp
-ar x /path/to/Handy/src-tauri/target/release/bundle/deb/Handy_*_amd64.deb data.tar.gz
+ar x /path/to/qtz-handy/src-tauri/target/release/bundle/deb/Handy_*_amd64.deb data.tar.gz
 tar xzf data.tar.gz
 sudo cp usr/bin/handy /usr/bin/
 sudo cp -r usr/lib/Handy /usr/lib/
 sudo cp -r usr/share/icons/hicolor/* /usr/share/icons/hicolor/
 sudo cp usr/share/applications/Handy.desktop /usr/share/applications/
+sudo update-desktop-database 2>/dev/null || true
 ```
 
-After subsequent rebuilds, only the binary needs re-copying:
-
-```bash
-sudo cp src-tauri/target/release/handy /usr/bin/
-```
+After subsequent rebuilds, only the binary needs re-copying to `~/Applications/Handy/handy` or `/usr/bin/handy`.
 
 Resources only need re-copying if they change upstream (new icons, sounds, etc.).
 

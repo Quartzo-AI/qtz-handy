@@ -70,8 +70,7 @@ pub fn change_tray_icon(app: &AppHandle, icon: TrayIconState) {
 
     let _ = tray.set_icon(Some(
         Image::from_path(
-            app.path()
-                .resolve(icon_path, tauri::path::BaseDirectory::Resource)
+            crate::portable::resolve_resource(app, icon_path)
                 .expect("failed to resolve"),
         )
         .expect("failed to set icon"),

@@ -80,6 +80,31 @@ pub fn resolve_app_data(app: &tauri::AppHandle, relative: &str) -> Result<PathBu
     Ok(app_data_dir(app)?.join(relative))
 }
 
+/// Resolve a resource file path, checking alongside the executable directory first before system fallback.
+pub fn resolve_resource(app: &tauri::AppHandle, relative: &str) -> Result<PathBuf, tauri::Error> {
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            let direct = exe_dir.join(relative);
+            if direct.exists() {
+                return Ok(direct);
+            }
+            // In case relative has or doesn't have "resources/" prefix
+            if let Some(stripped) = relative.strip_prefix("resources/") {
+                let stripped_path = exe_dir.join("resources").join(stripped);
+                if stripped_path.exists() {
+                    return Ok(stripped_path);
+                }
+            } else {
+                let with_resources = exe_dir.join("resources").join(relative);
+                if with_resources.exists() {
+                    return Ok(with_resources);
+                }
+            }
+        }
+    }
+    app.path().resolve(relative, tauri::path::BaseDirectory::Resource)
+}
+
 /// Get the path to use with `tauri-plugin-store`.
 /// Returns an absolute path in portable mode (so the store plugin writes to
 /// the portable Data dir) or the original relative path otherwise.
