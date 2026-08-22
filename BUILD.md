@@ -192,8 +192,10 @@ cd src-tauri/target/release/bundle/appimage
 **Workaround:** The binary, deb, and rpm bundles all build fine — only the AppImage step fails. To skip it:
 
 ```bash
-bun run tauri build -- --bundles deb
+bun run tauri build --bundles deb
 ```
+
+> **Note:** Do NOT add `--` before the flags when running through `bun run`. Bun forwards it literally, so the Tauri CLI passes everything after `--` down to `cargo build`, which fails with `unexpected argument '--bundles' found`.
 
 Then install using the deb extraction method above.
 
