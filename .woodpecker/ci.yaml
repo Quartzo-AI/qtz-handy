@@ -1,7 +1,13 @@
-# CI mínimo (QUARK-289 F5): build e testes que o repo já tem, em todo push e PR.
+# CI mínimo (QUARK-289 F5): build e testes que o repo já tem, no push de branch.
+# -----------------------------------------------------------------------------
+# QTZ-2388: roda só no push de branch. O push testa o mesmo commit que o PR
+# testaria (o status do GitHub é por commit) e o SHA verde pousa na main por
+# fast-forward, então nem o pull_request nem o push na main testam de novo.
+# -----------------------------------------------------------------------------
 when:
   - event: push
-  - event: pull_request
+    branch:
+      exclude: [main]
   - event: manual
 
 steps:
